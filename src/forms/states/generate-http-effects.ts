@@ -22,6 +22,7 @@ function getEffectsImports(name: string) {
   res += `import {Actions, Effect} from '@ngrx/effects';\n`;
   res += '\n';
   res += `import {of} from 'rxjs/observable/of';\n`;
+  res += '\n';
   res += `import {catchError, map, switchMap} from 'rxjs/operators';\n`;
   res += `import {${name}Service} from '../../../../controllers/${name}';\n`;
   res += `import * as actions from './actions';\n`;

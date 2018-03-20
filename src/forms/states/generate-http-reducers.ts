@@ -1,11 +1,11 @@
 import * as path from 'path';
 
+import {stateDir} from '../../conf';
 import {Config} from '../../generate';
 import {indent, writeFile} from '../../utils';
 
 export function generateHttpReducers(config: Config, actionClassNameBase: string,
                                      formSubDirName: string, responseType: string) {
-  // TODO implement initial state logic
   let content = '';
   content += getReducerImports();
   content += getStateInteface(actionClassNameBase, responseType);
@@ -13,7 +13,7 @@ export function generateHttpReducers(config: Config, actionClassNameBase: string
   content += getFeatureSelector(actionClassNameBase);
   content += getReducerDefinition(actionClassNameBase);
 
-  const reducersFileName = path.join(formSubDirName, `states`, `reducers.ts`);
+  const reducersFileName = path.join(formSubDirName, stateDir, `reducers.ts`);
   writeFile(reducersFileName, content, config.header);
 }
 

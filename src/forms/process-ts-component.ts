@@ -1,12 +1,11 @@
 import * as _ from 'lodash';
 import * as nodePath from 'path';
-import {processProperty, translateType} from '../common';
 import {nativeTypes} from '../conf';
 import {ProcessedDefinition} from '../definitions';
 import {Config} from '../generate';
 import {parameterToSchema} from '../requests/process-params';
 import {NativeNames, Parameter, Schema} from '../types';
-import {indent, out, TermColors, writeFile} from '../utils';
+import {indent, writeFile} from '../utils';
 
 export interface FieldDefinition {
   content: string;
@@ -19,21 +18,10 @@ export function createComponentTs(config: Config, name: string, params: Paramete
   let content = '';
   content += getImports(name);
   content += getComponent(simpleName);
-  content += `export class ${className}Component implements OnInit {\n`;
+  content += `export class ${className}Component {\n`;
   content += indent(`${name}Form: FormGroup;\n`);
 
-  const definitionsKeys: string[] = definitions.map(s => s.name);
-  const fieldDefinition: FieldDefinition = getFieldDefinition(params, definitionsKeys, definitions);
-
-  // TODO! check if originalName necessary
-  const definitionsMap = _.groupBy(definitions, 'originalName');
-  const formDefinition = walkParamOrProp(params, undefined, definitionsMap);
-
-  out(formDefinition);
-
-  content += fieldDefinition.content + '\n';
-  content += getConstructor(name);
-  content += getNgOnInit(fieldDefinition.params, name);
+  content += getConstructor(name, definitions, params);
   content += getFormSubmitFunction(name, simpleName, params);
   content += '}\n';
 
@@ -42,8 +30,8 @@ export function createComponentTs(config: Config, name: string, params: Paramete
 }
 
 function getImports(name: string) {
-  let res = 'import {Component, OnInit} from \'@angular/core\';\n';
-  res += 'import {FormBuilder, FormControl, FormGroup, Validators} from \'@angular/forms\';\n';
+  let res = 'import {Component} from \'@angular/core\';\n';
+  res += 'import {FormArray, FormControl, FormGroup, Validators} from \'@angular/forms\';\n';
   res += `import {${name}Service} from '../../../controllers/${name}';\n`;
   res += '\n';
 
@@ -55,6 +43,21 @@ function getComponent(simpleName: string) {
   res += indent(`selector: '${simpleName}',\n`);
   res += indent(`templateUrl: './${simpleName}.component.html',\n`);
   res += '})\n';
+  res += '\n';
+
+  return res;
+}
+
+function getConstructor(name: string, definitions: ProcessedDefinition[], params: Parameter[]) {
+  let res = indent('constructor(\n');
+  res += indent(`private ${name.toLowerCase()}Service: ${name}Service,\n`, 2);
+  res += indent(') {\n');
+
+  // TODO! check if originalName necessary
+  const definitionsMap = _.groupBy(definitions, 'originalName');
+  const formDefinition = walkParamOrProp(params, undefined, definitionsMap);
+  res += indent(`this.${name}Form = new FormGroup({\n${formDefinition}\n});\n`, 2);
+  res += indent('}\n');
   res += '\n';
 
   return res;
@@ -87,97 +90,51 @@ function walkParamOrProp(definition: Parameter[] | ProcessedDefinition, path: st
     const newPath = [...path, name];
     const ref = param.$ref;
     const isRequired = required && required.includes(name);
-    const child = makeField(param, ref, name, newPath, isRequired, definitions);
+    const fieldDefinition = makeField(param, ref, name, newPath, isRequired, definitions);
 
-    let initializer: string;
-    if (child.definition) {
-      const fields = walkParamOrProp(child.definition, newPath, definitions);
-      initializer = `{\n${indent(fields)}\n}`;
-    } else initializer = param.default;
-
-    const submodel = `${child.name}: new ${child.control}(${initializer}, [${child.validators.join(', ')}]),`;
-    res.push(submodel);
+    res.push(fieldDefinition);
   });
 
-  return `new FormGroup({${indent(res)}})`;
+  return indent(res);
 }
 
-interface FormField {
-  name: string;
-  type: string;
-  control: string;
-  definition: ProcessedDefinition;
-  validators: string[];
-  debug?: string[];
-}
 function makeField(param: Schema, ref: string,
                    name: string, path: string[], required: boolean,
-                   definitions: _.Dictionary<ProcessedDefinition[]>,
-                  ): FormField {
+                   definitions: _.Dictionary<ProcessedDefinition[]>): string {
 
   let definition: ProcessedDefinition;
   let type = param.type;
   let control: string;
-
-  const validators = getValidators(param);
-  if (required) validators.push('Validators.required');
+  let initializer: string;
 
   if (type) {
     if (type in nativeTypes) {
       const typedType = type as NativeNames;
       type = nativeTypes[typedType];
     }
+
+    // TODO implement arrays
+    // use helper method and store type definition to add new array items
     if (type === 'array') {
       control = 'FormArray';
-      return {name, definition, type, validators, control};
+      initializer = '[]';
+    } else {
+      control = 'FormControl';
+      initializer = typeof param.default === 'string' ? `'${param.default}'` : param.default;
     }
-
-    control = 'FormControl';
   } else {
     const refType = ref.replace(/^#\/definitions\//, '');
     definition = definitions[refType][0];
-    // out(definition.name + ' - ' + definition.originalName, TermColors.green);
-    // type = definition.name;
 
     control = 'FormGroup';
+    const fields = walkParamOrProp(definition, path, definitions);
+    initializer = `{\n${fields}\n}`;
   }
 
-  // out(`name: ${name}, path: ${path.join('.')}, type: ${type}, $ref: ${ref}`);
-  // out(JSON.stringify(translateType(type || ref)), TermColors.red);
+  const validators = getValidators(param);
+  if (required) validators.push('Validators.required');
 
-  return {name, definition, type, validators, control};
-}
-
-function getFieldDefinition(paramGroups: Parameter[], definitionKeys: string[],
-                            definitions: ProcessedDefinition[]): FieldDefinition {
-  const paramsList: string[] = [];
-  let content = '';
-
-  // checkbox, select or input
-  for (const param of paramGroups) {
-    if (definitionKeys.includes(param.name.toLowerCase())) {
-
-      const objDef: ProcessedDefinition = definitions.find(
-          obj => obj.name.toLowerCase() === param.name.toLowerCase());
-      const properties = objDef.def.properties;
-
-      Object.entries(properties).forEach(([key, value]) => {
-        const validators = getValidators(value);
-        if (objDef.def.required && objDef.def.required.includes(key)) {
-          validators.push('Validators.required');
-        }
-        content += indent(`${key} = new FormControl('', [${validators.join(', ')}]);\n`);
-        paramsList.push(key);
-      });
-    } else {
-      const validators = getValidators(param);
-      if (param.required) validators.push('Validators.required');
-      content += indent(`${param.name} = new FormControl('', [${validators.join(', ')}]);\n`);
-      paramsList.push(param.name);
-    }
-  }
-
-  return {content, params: paramsList};
+  return `${name}: new ${control}(${initializer}, [${validators.join(', ')}]),`;
 }
 
 function getValidators(param: Parameter | Schema) {
@@ -194,29 +151,6 @@ function getValidators(param: Parameter | Schema) {
   if (param.pattern) validators.push(`Validators.pattern('${param.pattern})`);
 
   return validators;
-}
-
-function getConstructor(name: string) {
-  let res = indent('constructor(\n');
-  res += indent('private formBuilder: FormBuilder,\n', 2);
-  res += indent(`private ${name.toLowerCase()}Service: ${name}Service,\n`, 2);
-  res += indent(') {}\n');
-  res += '\n';
-
-  return res;
-}
-
-function getNgOnInit(params: string[], name: string) {
-  let res = indent('ngOnInit() {\n');
-  res += indent(`this.${name}Form = this.formBuilder.group({\n`, 2);
-  for (const param of params) {
-    res += indent(`${param}: this.${param},\n`, 3);
-  }
-  res += indent(`}, {updateOn: 'change'});\n`, 2);
-  res += indent('}\n');
-  res += '\n';
-
-  return res;
 }
 
 function getFormSubmitFunction(name: string, simpleName: string, paramGroups: Parameter[]) {
