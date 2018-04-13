@@ -16,7 +16,8 @@ export interface Config {
  * @param src source swagger json schema
  * @param dest destination directory
  */
-export function generate(src: string = conf.apiFile, dest: string = conf.outDir) {
+export function generate(src: string = conf.apiFile, dest: string = conf.outDir,
+                         swaggerURLPath: string = conf.swaggerURLPath) {
   let schema: any;
 
   try {
@@ -37,6 +38,6 @@ export function generate(src: string = conf.apiFile, dest: string = conf.outDir)
   if (!fs.existsSync(dest)) fs.mkdirSync(dest);
 
   const definitions = processDefinitions(schema.definitions, config);
-  processPaths(schema.paths, `http://${schema.host}${schema.basePath}${conf.swaggerFile}`,
-               config, definitions);
+  processPaths(schema.paths, `http://${schema.host}${swaggerURLPath}${conf.swaggerFile}`,
+               config, definitions, schema.basePath);
 }

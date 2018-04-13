@@ -32,7 +32,7 @@ describe(`LoginService`, () => {
 
         backend.expectOne((req: HttpRequest<any>) => {
           return req.method === 'POST'
-            && req.url === '/api/registration/admin'
+            && req.url === '/api-base-path/api/registration/admin'
             && req.body.email === 'test@test.com'
             && req.body.password1 === 'password1'
             && req.body.password2 === 'password2';

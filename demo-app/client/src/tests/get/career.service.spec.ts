@@ -25,7 +25,7 @@ describe(`CareerDetailService`, () => {
           service.positions({version: '2', positionId: 220}).subscribe();
           backend.expectOne((req: HttpRequest<any>) => {
             return req.method === 'GET'
-              && req.url === '/api/career/v2/positions/220';
+              && req.url === '/api-base-path/api/career/v2/positions/220';
           });
       }),
     ),

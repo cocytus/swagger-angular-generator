@@ -20,7 +20,7 @@ import {ControllerMethod, Paths, PathsWithParameters} from './requests.models';
  * @param swaggerPath swagger base url
  */
 export function processPaths(pathsWithParameters: PathsWithParameters, swaggerPath: string, config: Config,
-                             definitions: ProcessedDefinition[]) {
+                             definitions: ProcessedDefinition[], basePath: string) {
   emptyDir(path.join(config.dest, conf.storeDir));
   emptyDir(path.join(config.dest, conf.apiDir));
 
@@ -38,6 +38,8 @@ export function processPaths(pathsWithParameters: PathsWithParameters, swaggerPa
       paramDef: method.parameters,
       responses: method.responses,
       responseDef: null,
+      /* tslint:disable-next-line:object-literal-shorthand */
+      basePath: basePath,
     }))
   ));
 

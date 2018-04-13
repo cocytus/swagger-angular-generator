@@ -54,7 +54,8 @@ export function processMethod(method: ControllerMethod): MethodOutput {
   methodDef += indent(paramSeparation);
   if (paramSeparation.length) methodDef += '\n';
 
-  const body = `return this.http.${method.methodName}<${method.responseDef.type}>(\`${url}\`${params});`;
+  /* tslint:disable-next-line:max-line-length */
+  const body = `return this.http.${method.methodName}<${method.responseDef.type}>(\`${method.basePath}${url}\`${params});`;
   methodDef += indent(body);
   methodDef += `\n`;
   methodDef += `}`;

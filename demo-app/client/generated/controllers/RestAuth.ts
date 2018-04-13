@@ -2,7 +2,7 @@
 /**
  * Test Swagger
  * v1
- * example.com/swagger
+ * example.com/api-base-path
  */
 
 import {HttpClient} from '@angular/common/http';
@@ -31,7 +31,7 @@ export class RestAuthService {
    * http://example.com/swagger/swagger-ui.html#!/rest-auth/rest-auth_logout_list
    */
   restAuthLogoutList(): Observable<void> {
-    return this.http.get<void>(`/rest-auth/logout/`);
+    return this.http.get<void>(`/api-base-path/rest-auth/logout/`);
   }
 
   /**
@@ -42,7 +42,7 @@ export class RestAuthService {
    * http://example.com/swagger/swagger-ui.html#!/rest-auth/rest-auth_logout_create
    */
   restAuthLogoutCreate(): Observable<void> {
-    return this.http.post<void>(`/rest-auth/logout/`, {});
+    return this.http.post<void>(`/api-base-path/rest-auth/logout/`, {});
   }
 
   /**
@@ -57,7 +57,7 @@ export class RestAuthService {
    * http://example.com/swagger/swagger-ui.html#!/rest-auth/rest-auth_user_read
    */
   restAuthUserRead(): Observable<model.UserDetails> {
-    return this.http.get<model.UserDetails>(`/rest-auth/user/`);
+    return this.http.get<model.UserDetails>(`/api-base-path/rest-auth/user/`);
   }
 
   /**
@@ -77,7 +77,7 @@ export class RestAuthService {
     Object.entries(bodyParams || {}).forEach(([key, value]) => {
       if (value !== undefined) bodyParamsWithoutUndefined[key] = value;
     });
-    return this.http.put<model.UserDetails>(`/rest-auth/user/`, bodyParamsWithoutUndefined);
+    return this.http.put<model.UserDetails>(`/api-base-path/rest-auth/user/`, bodyParamsWithoutUndefined);
   }
 
   /**
@@ -97,6 +97,6 @@ export class RestAuthService {
     Object.entries(bodyParams || {}).forEach(([key, value]) => {
       if (value !== undefined) bodyParamsWithoutUndefined[key] = value;
     });
-    return this.http.patch<model.UserDetails>(`/rest-auth/user/`, bodyParamsWithoutUndefined);
+    return this.http.patch<model.UserDetails>(`/api-base-path/rest-auth/user/`, bodyParamsWithoutUndefined);
   }
 }

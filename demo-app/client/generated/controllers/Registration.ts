@@ -2,7 +2,7 @@
 /**
  * Test Swagger
  * v1
- * example.com/swagger
+ * example.com/api-base-path
  */
 
 import {HttpClient} from '@angular/common/http';
@@ -40,6 +40,6 @@ export class RegistrationService {
     const pathParams = {
       registrationType: params.registrationType,
     };
-    return this.http.post<object>(`/api/registration/${pathParams.registrationType}`, formDataParams);
+    return this.http.post<object>(`/api-base-path/api/registration/${pathParams.registrationType}`, formDataParams);
   }
 }

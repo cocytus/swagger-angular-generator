@@ -2,7 +2,7 @@
 /**
  * Test Swagger
  * v1
- * example.com/swagger
+ * example.com/api-base-path
  */
 
 import {HttpClient, HttpParams} from '@angular/common/http';
@@ -62,6 +62,6 @@ export class ProductsService {
       }
     });
 
-    return this.http.get<model.Products>(`/api/products`, {params: queryParams});
+    return this.http.get<model.Products>(`/api-base-path/api/products`, {params: queryParams});
   }
 }

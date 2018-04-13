@@ -2,7 +2,7 @@
 /**
  * Test Swagger
  * v1
- * example.com/swagger
+ * example.com/api-base-path
  */
 
 import {HttpClient} from '@angular/common/http';
@@ -28,6 +28,6 @@ export class LoginService {
     const formDataParams = {
       loginDto: params.loginDto,
     };
-    return this.http.post<object>(`/api/login`, formDataParams);
+    return this.http.post<object>(`/api-base-path/api/login`, formDataParams);
   }
 }
